@@ -37,6 +37,16 @@ a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
         <div style="font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-300)">{{ splashDay }}</div>
         <div style="font-family:var(--font-heading);font-size:clamp(26px,5vw,40px);line-height:1.05">{{ splashDate }}</div>
       </div>
+      <sc-if value="{{ hasSplashStats }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ splashStats }}" as="st" hint-placeholder-count="4">
+            <div style="display:flex;align-items:baseline;gap:6px;padding:8px 16px;border-radius:999px;background:color-mix(in srgb, var(--color-neutral-100) 14%, transparent)">
+              <span style="font-family:var(--font-heading);font-size:20px">{{ st.v }}</span>
+              <span style="font-size:13px;font-weight:600;color:var(--color-neutral-300)">{{ st.l }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
       <div style="margin-top:auto;display:flex;flex-direction:column;gap:22px;max-width:460px">
         <div style="width:64px;height:64px;border-radius:50%;background:color-mix(in srgb, var(--color-neutral-100) 14%, transparent);display:grid;place-items:center;color:var(--color-accent-300)">{{ hourglass }}</div>
         <h1 style="margin:0;font-size:clamp(46px,11vw,84px);line-height:.95;text-wrap:balance">Yaman, hoş geldin.</h1>
@@ -442,10 +452,23 @@ class Component extends DCLogic {
   }
   componentDidUpdate() {
     document.body.style.background = this.state.view === 'reader' ? this.theme().bgRaw : '';
+    this.syncSummary();
+  }
+  syncSummary() {
+    if (this.state.ready && (this._lastTexts !== this.state.texts || this._lastQ !== this.state.quotes)) {
+      this._lastTexts = this.state.texts; this._lastQ = this.state.quotes;
+      const T = this.state.texts, read = T.filter(t => t.read);
+      const mins = read.reduce((s, t) => s + t.minutes, 0);
+      try { localStorage.setItem('okuma-defteri-ozet', JSON.stringify({ total: T.length, read: read.length, toread: T.length - read.length, mins, quotes: this.state.quotes.length })); } catch (e) {}
+    }
+  }
+  summary() {
+    try { return JSON.parse(localStorage.getItem('okuma-defteri-ozet')); } catch (e) { return null; }
   }
 
   async loadAll() {
     let d = await this.store.load();
+    if (!d && this.store.firebaseConfig) d = { texts: [], quotes: [], prefs: null };
     if (!d) {
       d = this.seed();
       for (const t of d.texts) await this.store.put('texts', t);
@@ -587,6 +610,7 @@ class Component extends DCLogic {
   renderVals() {
     const S = this.state;
     const T = this.theme();
+    this.syncSummary();
     const texts = S.texts;
     const toread = texts.filter(t => !t.read), read = texts.filter(t => t.read);
     const pool = S.tab === 'toread' ? toread : S.tab === 'read' ? read : texts;
@@ -719,6 +743,14 @@ class Component extends DCLogic {
       splashDay: today.toLocaleDateString('tr-TR', { weekday: 'long' }),
       splashDate: today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
       hourglass: this._hg,
+      ...(() => {
+        const o = S.auth === 'out' ? this.summary() : null;
+        if (!o || !o.total) return { hasSplashStats: false, splashStats: [] };
+        const hrs = o.mins < 60 ? `${o.mins} dk` : `${(o.mins / 60).toFixed(1).replace('.', ',')} saat`;
+        return { hasSplashStats: true, splashStats: [
+          { v: o.total, l: 'yazı' }, { v: o.read, l: 'okundu' }, { v: o.toread, l: 'bekliyor' }, { v: hrs, l: 'okuma' }
+        ] };
+      })(),
       pw: S.pw, pwError: S.pwError,
       setPw: e => this.setState({ pw: e.target.value, pwError: '' }),
       submitPw: async e => {
@@ -744,7 +776,7 @@ class Component extends DCLogic {
       statCards, months, tagStats, noTagStats: !tagStats.length, yearLabel: `${Y} · aylara göre`,
       statsSub: `Okuma listende ${toread.length} metin bekliyor · ${mins} dk`,
       showSignOut: S.auth === 'in', userLabel: 'Bu cihazda oturum açık',
-      signOut: async () => { await this.store.signOut(); this.setState({ auth: 'out', texts: [], quotes: [], view: 'library' }); },
+      signOut: async () => { await this.store.signOut(); this.setState({ auth: 'out', ready: false, texts: [], quotes: [], view: 'library' }); },
       goLibrary: () => this.go('library'),
       goBack: () => { this.setState({ view: 'library', settings: false, sel: null }); window.scrollTo(0, 0); },
       openAdd: () => this.setState({ add: { title: '', author: '', tag: '', body: '', cover: Math.floor(Math.random() * 12) }, addError: '' }),

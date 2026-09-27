@@ -1,6 +1,13 @@
 // Veri katmanı. firebaseConfig boşken tarayıcıda (localStorage) çalışır.
 // Firebase'e geçmek için: firebase-kurulum.md
-export const firebaseConfig = null;
+export const firebaseConfig = {
+  apiKey: "AIzaSyAwMQV7olP8_ApaE7fYOdin-iqSGLQzPIU",
+  authDomain: "okuma-defteri.firebaseapp.com",
+  projectId: "okuma-defteri",
+  storageBucket: "okuma-defteri.firebasestorage.app",
+  messagingSenderId: "269077818285",
+  appId: "1:269077818285:web:6a3f0d5ba9b4f624924f24"
+};
 /* örnek:
 export const firebaseConfig = {
   apiKey: "...", authDomain: "...firebaseapp.com", projectId: "...",

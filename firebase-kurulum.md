@@ -1,11 +1,15 @@
 # Firebase'e bağlama
 
-Site şu an verileri tarayıcıda tutuyor. Firebase'e geçince her cihazdan aynı kütüphaneyi görürsün.
+Site şu an verileri tarayıcıda tutuyor, açılış şifresi `store.js` içinde. Firebase'e geçince şifreyi Firebase kontrol eder ve her cihazdan aynı kütüphaneyi görürsün.
 
-1. console.firebase.google.com → **Proje ekle**.
-2. **Build → Authentication → Sign-in method → Google**'ı aç.
-3. **Build → Firestore Database → Create database** (production mode).
-4. Firestore **Rules** sekmesine yapıştır (verileri yalnızca sen görürsün):
+1. console.firebase.google.com → **Proje ekle** → `okuma-defteri`.
+2. **Build → Authentication → Get started → Email/Password** → Enable → Save.
+3. **Authentication → Users → Add user**
+   - Email: `yaman@okuma-defteri.app` (store.js'deki OWNER_EMAIL ile aynı)
+   - Password: giriş şifren
+4. **Authentication → Settings → Authorized domains → Add domain** → `yalcinyaman-ship-it.github.io`
+5. **Build → Firestore Database → Create database** (production mode, bölge eur3).
+6. Firestore **Rules** sekmesine yapıştır → Publish:
 
 ```
 rules_version = '2';
@@ -18,11 +22,7 @@ service cloud.firestore {
 }
 ```
 
-5. **Project settings → Your apps → Web (</>)** → uygulama ekle, çıkan `firebaseConfig` nesnesini `store.js` içindeki `firebaseConfig = null` yerine koy.
-6. **Authentication → Settings → Authorized domains**'e siteyi yayınladığın alan adını ekle (ör. `kullaniciadi.github.io`).
-
-## GitHub Pages
-Tüm dosyaları bir repoya yükle → **Settings → Pages → Branch: main / root**. Giriş sayfası `Okuma Defteri.dc.html`; istersen adını `index.html` yap.
+7. **Project settings → Your apps → Web (</>)** → uygulama ekle → çıkan `firebaseConfig` nesnesini `store.js` içindeki `firebaseConfig = null` yerine koy.
 
 Veri yapısı: `users/{uid}/texts/{id}`, `users/{uid}/quotes/{id}`, `users/{uid}/meta/prefs`.
-Tarayıcıdaki mevcut verin Firebase'e otomatik taşınmaz; ilk girişte örnek metinlerle başlar.
+Açılış fotoğrafı: repoya `ali-sami-yen.jpg` adıyla yükle.

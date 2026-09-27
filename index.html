@@ -17,6 +17,7 @@
 html,body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}
 a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
+@keyframes kumsaati{0%,40%{transform:rotate(0)}50%,90%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}
 @media print{
   [data-noprint]{display:none !important}
   html,body{background:#fff !important}
@@ -28,12 +29,25 @@ a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
 </helmet>
 
 <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ false }}">
-  <div style="min-height:100vh;display:grid;place-items:center;padding:24px">
-    <div class="card elev-md" style="max-width:380px;width:100%;padding:36px;border-radius:var(--radius-lg);gap:16px">
-      <div style="width:56px;height:56px;border-radius:50%;background:var(--color-accent)"></div>
-      <h1 style="margin:0;font-size:34px;line-height:1.05">Okuma Defteri</h1>
-      <p style="margin:0;color:var(--color-neutral-700);line-height:1.5">Kütüphanene her cihazdan ulaşmak için giriş yap.</p>
-      <button class="btn btn-primary" onClick="{{ signIn }}" style="border-radius:999px;padding:12px 20px;font-size:15px">Google ile giriş yap</button>
+  <div style="position:fixed;inset:0;overflow:hidden;background:var(--color-neutral-900);color:var(--color-neutral-100)">
+    <div class="washed" style="position:absolute;inset:0;background:url(ali-sami-yen.jpg) center/cover no-repeat"></div>
+    <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 58%, transparent)"></div>
+    <div style="position:relative;height:100%;max-width:1180px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) clamp(22px,6vw,64px) calc(36px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-300)">{{ splashDay }}</div>
+        <div style="font-family:var(--font-heading);font-size:clamp(26px,5vw,40px);line-height:1.05">{{ splashDate }}</div>
+      </div>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:22px;max-width:460px">
+        <div style="width:64px;height:64px;border-radius:50%;background:color-mix(in srgb, var(--color-neutral-100) 14%, transparent);display:grid;place-items:center;color:var(--color-accent-300)">{{ hourglass }}</div>
+        <h1 style="margin:0;font-size:clamp(46px,11vw,84px);line-height:.95;text-wrap:balance">Yaman, hoş geldin.</h1>
+        <form onSubmit="{{ submitPw }}" style="display:flex;gap:8px;align-items:center;background:color-mix(in srgb, var(--color-neutral-100) 94%, transparent);border-radius:999px;padding:6px 6px 6px 22px;box-shadow:var(--shadow-lg)">
+          <input type="password" value="{{ pw }}" onChange="{{ setPw }}" placeholder="Şifre" autocomplete="current-password" autofocus="" aria-label="Şifre" style="flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:17px;color:var(--color-text);outline:none;height:44px">
+          <button type="submit" aria-label="Gir" style="width:48px;height:48px;flex:none;border-radius:50%;border:0;background:var(--color-accent);color:var(--color-neutral-100);display:grid;place-items:center;cursor:pointer" style-hover="background:var(--color-accent-600)">
+            <svg width="20" height="20" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </button>
+        </form>
+        <div style="min-height:20px;font-size:14px;font-weight:600;color:var(--color-accent-300)">{{ pwError }}</div>
+      </div>
     </div>
   </div>
 </sc-if>
@@ -204,7 +218,7 @@ a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
     <sc-if value="{{ showSignOut }}" hint-placeholder-val="{{ false }}">
       <div style="margin-top:64px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--color-neutral-700)">
         <span>{{ userLabel }}</span>
-        <button class="btn btn-ghost" onClick="{{ signOut }}" style="border-radius:999px;font-size:13px;padding:6px 10px">Çıkış yap</button>
+        <button class="btn btn-ghost" onClick="{{ signOut }}" style="border-radius:999px;font-size:13px;padding:6px 10px">Kilitle</button>
       </div>
     </sc-if>
   </main>
@@ -414,7 +428,7 @@ class Component extends DCLogic {
   static MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   static TAGS = ['Makale', 'Deneme', 'Öykü', 'Söyleşi', 'İnceleme', 'Şiir'];
 
-  state = { ready: false, auth: 'local', user: null, view: 'library', tab: 'toread', tag: '', texts: [], quotes: [], prefs: { theme: 'sepia', size: 19, lh: 1.7 }, openId: null, add: null, addError: '', sel: null, qd: null, settings: false, progress: 0 };
+  state = { ready: false, auth: 'pending', pw: '', pwError: '', pwBusy: false, user: null, view: 'library', tab: 'toread', tag: '', texts: [], quotes: [], prefs: { theme: 'sepia', size: 19, lh: 1.7 }, openId: null, add: null, addError: '', sel: null, qd: null, settings: false, progress: 0 };
 
   async componentDidMount() {
     this.onScroll = this.onScroll.bind(this);
@@ -423,8 +437,8 @@ class Component extends DCLogic {
     document.addEventListener('selectionchange', this.onSel);
     this.store = await import('./store.js');
     const r = await this.store.init();
-    this.setState({ auth: r.mode === 'firebase' ? (r.user ? 'in' : 'out') : 'local', user: r.user });
-    if (r.mode === 'local' || r.user) await this.loadAll();
+    this.setState({ auth: r.user ? 'in' : 'out', user: r.user });
+    if (r.user) await this.loadAll();
   }
   componentWillUnmount() {
     window.removeEventListener('scroll', this.onScroll);
@@ -699,11 +713,33 @@ class Component extends DCLogic {
     }));
     const tagSuggest = [...new Set([...Component.TAGS, ...texts.map(x => x.tag).filter(Boolean)])];
 
+    const today = new Date();
+    if (!this._hg) this._hg = React.createElement('svg', { width: 30, height: 30, viewBox: '0 0 24 24', style: { fill: 'none', stroke: 'currentColor', strokeWidth: 2.75, strokeLinecap: 'round', strokeLinejoin: 'round', animation: 'kumsaati 3s ease-in-out infinite' } },
+      React.createElement('path', { d: 'M5 22h14' }), React.createElement('path', { d: 'M5 2h14' }),
+      React.createElement('path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }),
+      React.createElement('path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }));
     return {
       showAuth: S.auth === 'out',
-      isShell: S.auth !== 'out' && S.view !== 'reader',
+      splashDay: today.toLocaleDateString('tr-TR', { weekday: 'long' }),
+      splashDate: today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      hourglass: this._hg,
+      pw: S.pw, pwError: S.pwError,
+      setPw: e => this.setState({ pw: e.target.value, pwError: '' }),
+      submitPw: async e => {
+        e.preventDefault();
+        if (!S.pw || S.pwBusy) return;
+        this.setState({ pwBusy: true, pwError: '' });
+        try {
+          const u = await this.store.signIn(S.pw);
+          this.setState({ auth: 'in', user: u, pw: '', pwBusy: false });
+          this.loadAll();
+        } catch (err) {
+          this.setState({ pwError: 'Şifre yanlış, bir daha dene.', pw: '', pwBusy: false });
+        }
+      },
+      isShell: S.auth === 'in' && S.view !== 'reader',
       isLibrary: S.view === 'library', isQuotes: S.view === 'quotes', isStats: S.view === 'stats',
-      isReader: S.auth !== 'out' && S.view === 'reader' && !!t,
+      isReader: S.auth === 'in' && S.view === 'reader' && !!t,
       navItems, tabs, tagChips, hasTags: tagsInPool.length > 1, cards,
       libTitle, libSub, libEmpty: S.ready && !cards.length,
       emptyText: S.tab === 'read' ? 'Henüz okundu olarak işaretlediğin metin yok.' : 'Okuma listen boş. İlk metni ekle.',
@@ -711,8 +747,7 @@ class Component extends DCLogic {
       quotesSub: qTotal ? `${qTotal} alıntı · ${quoteGroups.length} metinden` : 'Henüz alıntı yok',
       statCards, months, tagStats, noTagStats: !tagStats.length, yearLabel: `${Y} · aylara göre`,
       statsSub: `Okuma listende ${toread.length} metin bekliyor · ${mins} dk`,
-      showSignOut: S.auth === 'in', userLabel: S.user ? (S.user.email || S.user.name) : '',
-      signIn: async () => { const u = await this.store.signIn(); this.setState({ auth: 'in', user: u }); this.loadAll(); },
+      showSignOut: S.auth === 'in', userLabel: 'Bu cihazda oturum açık',
       signOut: async () => { await this.store.signOut(); this.setState({ auth: 'out', texts: [], quotes: [], view: 'library' }); },
       goLibrary: () => this.go('library'),
       goBack: () => { this.setState({ view: 'library', settings: false, sel: null }); window.scrollTo(0, 0); },
